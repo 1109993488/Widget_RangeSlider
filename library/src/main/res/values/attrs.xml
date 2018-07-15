@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="BGMRangeSlider">
+        <attr name="slider_background" format="reference" />
+        <attr name="slider_thumb_color" format="color" />
+        <attr name="slider_thumb_max" format="integer" />
+        <attr name="slider_thumb_size" format="integer" />
+        <attr name="slider_thumb_progress" format="integer" />
+    </declare-styleable>
+</resources>
