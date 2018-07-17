@@ -5,7 +5,6 @@ import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
@@ -133,21 +132,36 @@ public class BGMRangeSlider extends View {
             case MotionEvent.ACTION_DOWN:
                 boolean isTouchInThumb = isTouchInThumb(event);
                 if (isTouchInThumb) {
+                    getParent().requestDisallowInterceptTouchEvent(true);
                     mLastX = event.getX();
+                } else {
+                    mLastX = -1;
                 }
                 break;
             case MotionEvent.ACTION_CANCEL:
             case MotionEvent.ACTION_UP:
-                mLastX = -1;
-                mThumbProgress = mThumbProgress + mThumbProgressTem;
-                if (mRangeChangeListener != null && mThumbProgressTem != 0) {
-                    mRangeChangeListener.onChanged(mThumbMax, mThumbProgress);
+                if (mThumbProgressTem != 0) {
+                    mThumbProgress = mThumbProgress + mThumbProgressTem;
+                    if (mRangeChangeListener != null) {
+                        mRangeChangeListener.onChanged(mThumbProgress, mThumbProgress + mThumbSize, false);
+                    }
+                    mThumbProgressTem = 0;
+                    postInvalidate();
                 }
-                mThumbProgressTem = 0;
                 break;
             case MotionEvent.ACTION_MOVE:
-                if (mLastX != 0) {
-                    moveThumb(event.getX() - mLastX);
+                if (mLastX != -1) {
+                    int thumbProgressTem = moveThumb(event.getX() - mLastX);
+
+                    if (mThumbProgressTem != thumbProgressTem) {
+                        mThumbProgressTem = thumbProgressTem;
+                        postInvalidate();
+
+                        if (mRangeChangeListener != null) {
+                            final int progress = mThumbProgress + mThumbProgressTem;
+                            mRangeChangeListener.onChanged(progress, progress + mThumbSize, true);
+                        }
+                    }
                 }
                 break;
         }
@@ -162,15 +176,15 @@ public class BGMRangeSlider extends View {
         return false;
     }
 
-    private void moveThumb(float x) {
-        mThumbProgressTem = (int) (x / mThumbBlock);
-        final int progress = mThumbProgress + mThumbProgressTem;
+    private int moveThumb(float x) {
+        int thumbProgressTem = (int) (x / mThumbBlock);
+        final int progress = mThumbProgress + thumbProgressTem;
         if (progress < 0) {
-            mThumbProgressTem = 0 - mThumbProgress;
+            thumbProgressTem = 0 - mThumbProgress;
         } else if (progress > mThumbMax - mThumbSize) {
-            mThumbProgressTem = mThumbMax - mThumbSize - mThumbProgress;
+            thumbProgressTem = mThumbMax - mThumbSize - mThumbProgress;
         }
-        postInvalidate();
+        return thumbProgressTem;
     }
 
     private OnRangeChangeListener mRangeChangeListener;
@@ -180,6 +194,6 @@ public class BGMRangeSlider extends View {
     }
 
     public interface OnRangeChangeListener {
-        void onChanged(int max, int progress);
+        void onChanged(int startTime, int endTime, boolean touch);
     }
 }
